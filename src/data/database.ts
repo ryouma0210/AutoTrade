@@ -8,6 +8,7 @@ type SnapshotRow = { date: string; total_asset: number; daily_profit: number };
 
 let dbPromise: ReturnType<typeof SQLite.openDatabaseAsync> | null = null;
 const getDb = () => (dbPromise ??= SQLite.openDatabaseAsync('auto-trade.db'));
+const isProduction = process.env.EXPO_PUBLIC_APP_ENV === 'production';
 
 export async function initializeDatabase() {
   const db = await getDb();
@@ -22,7 +23,7 @@ export async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS favorites (symbol TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT NOT NULL);
   `);
   const count = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM positions');
-  if ((count?.count ?? 0) === 0) await seedDemoData();
+  if (!isProduction && (count?.count ?? 0) === 0) await seedDemoData();
 }
 
 async function seedDemoData() {
