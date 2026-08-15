@@ -19,7 +19,7 @@ npm test
 
 1. FishingWalkと同じrclone設定をBase64化し、GitHub Repository Secret `GDRIVE_RCLONE_CONFIG_BASE64` に登録する。
 2. `stg` / `production` へのpushでGitHub ActionsがExpo PrebuildとGradleを実行する。
-3. 生成した`auto-trade-stg-v0.1.0.apk` / `auto-trade-prd-v0.1.0.apk`をDriveフォルダー `10OYIyP7Qm4w0z4sZARcwcPHhSQxYWlML` へアップロードする。
+3. `auto-trade-stg-v0.1.0.apk`はDriveの`STG`フォルダーへ、`auto-trade-prd-v0.1.0.apk`は`PRD`フォルダーへアップロードする。
 
 EAS Buildは使用しないため、`EXPO_TOKEN`とEAS projectIdは不要です。
 

@@ -40,8 +40,10 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           if [ "$GITHUB_REF_NAME" = "production" ]; then
             echo "APK_NAME=auto-trade-prd-v${VERSION}.apk" >> "$GITHUB_ENV"
+            echo "DRIVE_SUBFOLDER=PRD" >> "$GITHUB_ENV"
           else
             echo "APK_NAME=auto-trade-stg-v${VERSION}.apk" >> "$GITHUB_ENV"
+            echo "DRIVE_SUBFOLDER=STG" >> "$GITHUB_ENV"
           fi
       - name: Upload GitHub artifact
         uses: actions/upload-artifact@v4
@@ -62,4 +64,4 @@ jobs:
       - name: Upload APK to Google Drive
         env:
           DRIVE_FOLDER_ID: 10OYIyP7Qm4w0z4sZARcwcPHhSQxYWlML
-        run: rclone copyto android/app/build/outputs/apk/release/app-release.apk "gdrive:${APK_NAME}" --drive-root-folder-id "$DRIVE_FOLDER_ID"
+        run: rclone copyto android/app/build/outputs/apk/release/app-release.apk "gdrive:${DRIVE_SUBFOLDER}/${APK_NAME}" --drive-root-folder-id "$DRIVE_FOLDER_ID"
