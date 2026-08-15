@@ -19,7 +19,7 @@ npm test
 
 1. `npx eas init` を実行し、`app.json` の `REPLACE_WITH_EAS_PROJECT_ID` を実際の projectId に置き換える。
 2. GitHub Secrets に `EXPO_TOKEN` と、Drive APIを有効化したGoogle CloudサービスアカウントJSON `GDRIVE_SERVICE_ACCOUNT_JSON` を登録する。
-3. Driveフォルダー `1AN5dktUAo79e6bnZ_T_7C_E20Lm3c9Dh` をサービスアカウントへ共有する。
+3. Driveフォルダー `10OYIyP7Qm4w0z4sZARcwcPHhSQxYWlML` をサービスアカウントへ「編集者」で共有する。
 4. `stg` / `production` への push で、それぞれ `auto-trade-stg-v0.1.0.apk` / `auto-trade-prd-v0.1.0.apk` を生成する。
 
 ブランチ構成: `main`（開発）、`stg`（検証）、`production`（本番）

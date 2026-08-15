@@ -46,7 +46,7 @@ jobs:
       - name: Upload APK to Google Drive
         env:
           GOOGLE_WORKSPACE_CLI_TOKEN: ${{ steps.google-auth.outputs.access_token }}
-          GDRIVE_FOLDER_ID: 1AN5dktUAo79e6bnZ_T_7C_E20Lm3c9Dh
+          GDRIVE_FOLDER_ID: 10OYIyP7Qm4w0z4sZARcwcPHhSQxYWlML
         shell: bash
         run: |
           FILE="auto-trade-${{ steps.env.outputs.profile }}-v${{ steps.env.outputs.version }}.apk"
