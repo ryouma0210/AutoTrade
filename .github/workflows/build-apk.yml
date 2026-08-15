@@ -1,7 +1,7 @@
 name: Build and upload Android APK
 on:
   push:
-    branches: [stg, prd]
+    branches: [stg, production]
   workflow_dispatch:
 jobs:
   build:
@@ -21,7 +21,7 @@ jobs:
         id: env
         shell: bash
         run: |
-          if [ "${GITHUB_REF_NAME}" = "prd" ]; then echo "profile=prd" >> "$GITHUB_OUTPUT"; else echo "profile=stg" >> "$GITHUB_OUTPUT"; fi
+          if [ "${GITHUB_REF_NAME}" = "production" ]; then echo "profile=prd" >> "$GITHUB_OUTPUT"; else echo "profile=stg" >> "$GITHUB_OUTPUT"; fi
           echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Build APK with EAS
         env:
