@@ -1,0 +1,10 @@
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../theme';
+
+export function Card({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) { return <View style={[styles.card, style]}>{children}</View>; }
+export function SectionTitle({ title, action, onPress }: { title: string; action?: string; onPress?: () => void }) { return <View style={styles.sectionRow}><Text style={styles.sectionTitle}>{title}</Text>{action && <TouchableOpacity onPress={onPress}><Text style={styles.action}>{action}</Text></TouchableOpacity>}</View>; }
+export function Empty({ icon = 'leaf-outline', text }: { icon?: keyof typeof Ionicons.glyphMap; text: string }) { return <View style={styles.empty}><Ionicons name={icon} size={30} color={colors.muted}/><Text style={styles.emptyText}>{text}</Text></View>; }
+export function Pill({ label, tone = 'green' }: { label: string; tone?: 'green' | 'red' | 'gray' }) { const bg = tone === 'green' ? colors.primarySoft : tone === 'red' ? '#FBE7E5' : '#EDF1EF'; const fg = tone === 'green' ? colors.primary : tone === 'red' ? colors.negative : colors.muted; return <View style={[styles.pill, { backgroundColor: bg }]}><Text style={[styles.pillText, { color: fg }]}>{label}</Text></View>; }
+const styles = StyleSheet.create({ card: { backgroundColor: colors.surface, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: colors.border }, sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 12 }, sectionTitle: { color: colors.ink, fontSize: 18, fontWeight: '700' }, action: { color: colors.primary, fontWeight: '600' }, empty: { alignItems: 'center', paddingVertical: 30, gap: 8 }, emptyText: { color: colors.muted }, pill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99 }, pillText: { fontSize: 12, fontWeight: '700' } });

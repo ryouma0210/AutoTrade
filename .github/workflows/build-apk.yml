@@ -1,0 +1,53 @@
+name: Build and upload Android APK
+on:
+  push:
+    branches: [stg, prd]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Resolve environment
+        id: env
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "prd" ]; then echo "profile=prd" >> "$GITHUB_OUTPUT"; else echo "profile=stg" >> "$GITHUB_OUTPUT"; fi
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Build APK with EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli build --platform android --profile ${{ steps.env.outputs.profile }} --non-interactive --wait --json > eas-build.json
+      - name: Download APK
+        shell: bash
+        run: |
+          URL=$(node -e "const x=require('./eas-build.json'); console.log((Array.isArray(x)?x[0]:x).artifacts.buildUrl)")
+          curl --fail --location "$URL" --output "auto-trade-${{ steps.env.outputs.profile }}-v${{ steps.env.outputs.version }}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auto-trade-${{ steps.env.outputs.profile }}-v${{ steps.env.outputs.version }}
+          path: auto-trade-*.apk
+      - name: Authenticate to Google Cloud
+        id: google-auth
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.file
+      - name: Upload APK to Google Drive
+        env:
+          GOOGLE_WORKSPACE_CLI_TOKEN: ${{ steps.google-auth.outputs.access_token }}
+          GDRIVE_FOLDER_ID: 1AN5dktUAo79e6bnZ_T_7C_E20Lm3c9Dh
+        shell: bash
+        run: |
+          FILE="auto-trade-${{ steps.env.outputs.profile }}-v${{ steps.env.outputs.version }}.apk"
+          npx --yes @googleworkspace/cli drive files create --json "{\"name\":\"$FILE\",\"parents\":[\"$GDRIVE_FOLDER_ID\"]}" --upload "$FILE" --upload-content-type application/vnd.android.package-archive
