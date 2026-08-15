@@ -15,11 +15,12 @@ npm test
 
 重要: サーバーを置かない構成では、OSに停止された後も継続する常時監視や厳密な時刻での自動売却は保証できません。0.1.0 はアプリ起動中の価格更新時に判定します。
 
-## EAS / GitHub Actions
+## GitHub Actions / APK配布
 
-1. `npx eas init` を実行し、`app.json` の `REPLACE_WITH_EAS_PROJECT_ID` を実際の projectId に置き換える。
-2. GitHub Secrets に `EXPO_TOKEN` と、Drive APIを有効化したGoogle CloudサービスアカウントJSON `GDRIVE_SERVICE_ACCOUNT_JSON` を登録する。
-3. Driveフォルダー `10OYIyP7Qm4w0z4sZARcwcPHhSQxYWlML` をサービスアカウントへ「編集者」で共有する。
-4. `stg` / `production` への push で、それぞれ `auto-trade-stg-v0.1.0.apk` / `auto-trade-prd-v0.1.0.apk` を生成する。
+1. FishingWalkと同じrclone設定をBase64化し、GitHub Repository Secret `GDRIVE_RCLONE_CONFIG_BASE64` に登録する。
+2. `stg` / `production` へのpushでGitHub ActionsがExpo PrebuildとGradleを実行する。
+3. 生成した`auto-trade-stg-v0.1.0.apk` / `auto-trade-prd-v0.1.0.apk`をDriveフォルダー `10OYIyP7Qm4w0z4sZARcwcPHhSQxYWlML` へアップロードする。
+
+EAS Buildは使用しないため、`EXPO_TOKEN`とEAS projectIdは不要です。
 
 ブランチ構成: `main`（開発）、`stg`（検証）、`production`（本番）

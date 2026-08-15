@@ -1,53 +1,65 @@
 name: Build and upload Android APK
+
 on:
+  workflow_dispatch:
   push:
     branches: [stg, production]
-  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    env:
+      EXPO_PUBLIC_APP_ENV: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
-      - name: Resolve environment
-        id: env
-        shell: bash
-        run: |
-          if [ "${GITHUB_REF_NAME}" = "production" ]; then echo "profile=prd" >> "$GITHUB_OUTPUT"; else echo "profile=stg" >> "$GITHUB_OUTPUT"; fi
-          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-      - name: Build APK with EAS
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --clean --non-interactive
+      - name: Build release APK
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas-cli build --platform android --profile ${{ steps.env.outputs.profile }} --non-interactive --wait --json > eas-build.json
-      - name: Download APK
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: ./gradlew assembleRelease --no-daemon --max-workers=2
+        working-directory: android
+      - name: Select artifact name
         shell: bash
         run: |
-          URL=$(node -e "const x=require('./eas-build.json'); console.log((Array.isArray(x)?x[0]:x).artifacts.buildUrl)")
-          curl --fail --location "$URL" --output "auto-trade-${{ steps.env.outputs.profile }}-v${{ steps.env.outputs.version }}.apk"
-      - uses: actions/upload-artifact@v4
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_NAME" = "production" ]; then
+            echo "APK_NAME=auto-trade-prd-v${VERSION}.apk" >> "$GITHUB_ENV"
+          else
+            echo "APK_NAME=auto-trade-stg-v${VERSION}.apk" >> "$GITHUB_ENV"
+          fi
+      - name: Upload GitHub artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: auto-trade-${{ steps.env.outputs.profile }}-v${{ steps.env.outputs.version }}
-          path: auto-trade-*.apk
-      - name: Authenticate to Google Cloud
-        id: google-auth
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/drive.file
+          name: ${{ env.APK_NAME }}
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+      - name: Install rclone
+        run: curl -fsSL https://rclone.org/install.sh | sudo bash
+      - name: Configure Google Drive
+        env:
+          RCLONE_CONFIG_BASE64: ${{ secrets.GDRIVE_RCLONE_CONFIG_BASE64 }}
+        run: |
+          test -n "$RCLONE_CONFIG_BASE64"
+          mkdir -p "$HOME/.config/rclone"
+          echo "$RCLONE_CONFIG_BASE64" | base64 --decode > "$HOME/.config/rclone/rclone.conf"
+          chmod 600 "$HOME/.config/rclone/rclone.conf"
       - name: Upload APK to Google Drive
         env:
-          GOOGLE_WORKSPACE_CLI_TOKEN: ${{ steps.google-auth.outputs.access_token }}
-          GDRIVE_FOLDER_ID: 10OYIyP7Qm4w0z4sZARcwcPHhSQxYWlML
-        shell: bash
-        run: |
-          FILE="auto-trade-${{ steps.env.outputs.profile }}-v${{ steps.env.outputs.version }}.apk"
-          npx --yes @googleworkspace/cli drive files create --json "{\"name\":\"$FILE\",\"parents\":[\"$GDRIVE_FOLDER_ID\"]}" --upload "$FILE" --upload-content-type application/vnd.android.package-archive
+          DRIVE_FOLDER_ID: 10OYIyP7Qm4w0z4sZARcwcPHhSQxYWlML
+        run: rclone copyto android/app/build/outputs/apk/release/app-release.apk "gdrive:${APK_NAME}" --drive-root-folder-id "$DRIVE_FOLDER_ID"
