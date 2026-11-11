@@ -51,6 +51,7 @@ jobs:
           name: ${{ env.APK_NAME }}
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+          retention-days: 1
       - name: Install rclone
         run: curl -fsSL https://rclone.org/install.sh | sudo bash
       - name: Configure Google Drive
